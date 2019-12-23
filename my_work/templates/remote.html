@@ -1,0 +1,78 @@
+{% load my_filters %}  <!--自定义的Django过滤器-->
+{%for item in items%}
+<div class="modal-header">
+	<!-- 如下取消按钮 -->
+	<button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+	<h4 class="modal-title" id="H1">修改信息</h4>
+</div>
+<div class="modal-body">
+	<form id="edit_record" action="/edit_record/" method="POST" class="form-horizontal" role="form">
+		<div class="row">
+			<div class="pull-left" style="width:515px; margin: 15px;">
+				<table id="table" class="table table-bordered table-hover">
+					<div class="row">
+						<thead>
+							<tr>
+								<td style="width:170px;"><b>产品型号</b></td>
+								<td style="width:130px;"><b>工单数量</b></td>
+								<td><b>工单量占比</b></td>
+							</tr>
+						</thead>
+						<tbody>
+							{% for product_name_1, order_quantity_1, order_proportion_1 in item.order_top|my_cut:"0" %}
+							<tr>
+								<td><input type="text" name="product_name_1" style="width:100%" value="{{ product_name_1 }}" /></td>
+								<td><input type="text" name="order_quantity_1" style="width:100%" value="{{ order_quantity_1 }}" /></td>
+								<td><input type="text" name="order_proportion_1" style="width:100%" value="{{ order_proportion_1 }}" /></td>
+							</tr>
+							{% endfor %}
+							{% for product_name_2, order_quantity_2, order_proportion_2 in item.order_top|my_cut:"1" %}
+							<tr>
+								<td><input type="text" name="product_name_2" style="width:100%" value="{{ product_name_2 }}" /></td>
+								<td><input type="text" name="order_quantity_2" style="width:100%" value="{{ order_quantity_2 }}" /></td>
+								<td><input type="text" name="order_proportion_2" style="width:100%" value="{{ order_proportion_2 }}" /></td>
+							</tr>
+							{% endfor %}
+							{% for product_name_3, order_quantity_3, order_proportion_3 in item.order_top|my_cut:"2" %}
+							<tr>
+								<td><input type="text" name="product_name_3" style="width:100%" value="{{ product_name_3 }}" /></td>
+								<td><input type="text" name="order_quantity_3" style="width:100%" value="{{ order_quantity_3 }}" /></td>
+								<td><input type="text" name="order_proportion_3" style="width:100%" value="{{ order_proportion_3 }}" /></td>
+							</tr>
+							{% endfor %}
+						</tbody>
+					</div>
+				</table>
+			</div>
+			<div class="pull-right" style="width:515px; margin-right: 15px; ">
+				<div class="form-group">
+					<label for="week_number" class="col-sm-3 control-label">周编号：</label>
+					<div class="col-sm-3">
+						<input type="number" class="form-control" id="week_number" name="week_number" value="{{ item.week_number }}" />
+					</div>
+				</div>
+				<div class="form-group">
+					<label for="week_year" class="col-sm-3 control-label">选择年份：</label>
+					<div class="col-sm-4">
+						<input type="text" class="form-control" id="week_year" name="week_year" value="{{ item.week_year }}" />
+					</div>
+					<div style="padding-top:7px;"><i>(可不选，默认今年。)</i></div>
+				</div>
+				<div class="form-group"  >
+					<label for="order_summary" class="col-sm-3 control-label" >分析总结：</label>
+					<div style="padding:9px 15px 4px 15px;">
+						<textarea rows="8" style="resize: vertical; background: transparent; " id="order_summary" class="form-control" name="order_summary">{{ item.order_summary }}</textarea>
+						<input type="hidden" class="form-control"  id='id_edit' name='id_edit' value="{{ item.id }}" />
+						<input type="hidden" class="form-control"  id='url_address' name='url_address' value='' />
+					</div>
+				</div>
+			</div>
+		</div>
+	{% csrf_token %}
+	</form>
+</div>
+<div class="modal-footer">
+	<button type="button" class="btn btn-success" data-dissmiss="modal" id="btnCreate" onclick="edit_record()">提交</button>
+	<button type="button" class="btn btn-danger" id="btnCancel" data-dismiss="modal">取消</button>
+</div>
+{%endfor%}

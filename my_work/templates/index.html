@@ -1,0 +1,430 @@
+{% load static %}  <!--加载静态文件目录-->
+{% load my_filters %}  <!--自定义的Django过滤器-->
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- 前置3个meta标签 -->
+    <title>产品问题分布</title>
+    <meta name="keywords" content="**">
+    <meta name="description" content="**" />
+    <meta name="HandheldFriendly" content="True" />
+    <!--BootstrapJS-->
+    <script src="/static/js/jquery-1.12.4.min.js "></script>
+    <script src="/static/js/bootstrap.min.js "></script>
+    <!--JS插件-->
+    <script src="/static/js/jquery.pin.min.js "></script>
+    <script src="/static/js/toastr.min.js"></script>
+    <script type="text/javascript" src="/static/js/bootstrap-datepicker.min.js" charset="UTF-8"></script>
+    <script type="text/javascript" src="/static/js/bootstrap-datepicker.zh-CN.min.js" charset="UTF-8"></script>
+    <!--CSS样式-->
+    <link rel="stylesheet" href="/static/css/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="/static/css/toastr.min.css"  />
+    <link rel="stylesheet" href="/static/css/bootstrap-datepicker.min.css" />
+
+    <!-- HTML5 shim and Respond.js for IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+        <script src="//cdn.bootcss.com/html5shiv/3.7.2/html5shiv.min.js"></script>
+        <script src="//cdn.bootcss.com/respond./static/js/1.4.2/respond.min.js"></script>
+    <![endif]-->
+    <style>
+        .list-group {
+            padding-left: 0;
+            margin-bottom: 20px;
+        }
+        .list-group-item {
+            position: relative;
+            display: block;
+            padding: 8px 15px;
+            margin-bottom: -1px;
+            background-color: #fff;
+            border: 1px solid #ddd;
+        }
+        .table thead {
+            text-align:center;
+        }
+        .table tr>td:first-child,
+        .table tr>td:nth-child(2),
+        .table tr>td:nth-child(3),
+        .table tr>td:last-child {
+            text-align:center;
+        }
+        .container-liquid {
+            padding-left: 0;
+            padding-right: 0;
+            margin-left: 0;
+            margin-right: 0;
+        }
+        .panel-group{max-height:900px;overflow: auto;}
+        /* .leftMenu{margin:10px;margin-top:5px;} */
+        .leftMenu .panel-heading{font-size:14px;padding-left:23px;height:36px;line-height:36px;color:white;position:relative;cursor:pointer;}/*转成手形图标*/
+        .leftMenu .panel-heading span{position:absolute;right:10px;top:12px;}
+        .leftMenu .panel-title a{ text-decoration:none;}
+        .leftMenu .menu-item-left{padding: 2px; background: transparent; border:1px solid transparent;border-radius: 6px;}
+        .leftMenu .menu-item-left:hover{background:#C4E3F3;border:1px solid #1E90FF;}
+        .leftMenu .panel-collapse span{padding-left: 8px;}
+    </style>
+</head>
+
+<body>
+    <!--块级元素 - 开始-->
+    <!--原section class="container clearfix"；若需要100%显示，则改为container-fluid-->
+    <section class="container" style="width:100%;">
+        <div class="row">
+            <div class="col-md-12" style="padding-top:10px; padding-left: 8px;">
+                <div class="panel-default">
+                    <div class="clearfix">
+                        <div style="margin-left:120px; margin-right: 120px;">
+                        <!--如下nav用于固定到顶部导航-->
+                        <!--start - 顶部菜单-->
+                            <div class="pull-left">
+                                <!-- 分页 -->
+                                <a href="?page=1"><button class="btn btn-link">第1页</button></a>
+                                {% if TableItems.has_previous %}
+                                <a href="?page={{ TableItems.previous_page_number }}"><button class="btn btn-link">上一页</button></a>
+                                {% endif %}
+                                <span>{{ TableItems.number }} of {{ TableItems.paginator.num_pages }}</span>
+                                {% if TableItems.has_next %}
+                                <a href="?page={{ TableItems.next_page_number }}"><button class="btn btn-link">下一页</button></a>
+                                {% endif %}
+                                <a href="?page={{ TableItems.paginator.num_pages }}"><button class="btn btn-link">最后1页</button></a>
+                            </div>
+                            <div class="pull-right">
+                                <!-- 全局操作  style="margin: auto 0px;" -->
+                                <button class="btn btn-success" data-toggle="modal" data-target="#addRecord" data-backdrop="static">增加记录</button>
+                            </div>
+                            <!-- </div>
+                        </nav> -->
+                        <!--end - 顶部菜单-->
+                        </div>
+                        <div class="panel-body" style="margin-top:30px;">
+                            <div class="form-group">
+
+                                <!-- 左边部分 -->
+                                <div class="col-md-5" style="margin-left: 100px;">
+                                    {% for item in TableItems|slice:"0:1" %}
+                                    <div class="pull-left" style="margin-bottom: 10px;">
+                                        <button class="btn btn-info" >wk{{ item.week_number }}</button>
+                                        <span>（年份：{{ item.week_year }}）</span>
+                                    </div>
+                                    <div class="pull-right" style="margin-bottom: 10px;">
+                                        <button class="btn btn-success" data-toggle="modal" href="/remote/{{ item.id }}"  data-target="#editRecord" onclick="Value_url('/')">编辑</button>
+                                        <button class="btn btn-warning" data-toggle="modal" data-target="#delRecord" onclick="Value_id('{{ item.id }}')">删除</button>
+                                    </div>
+                                    <table id="List3" class="table table-bordered table-hover table-condensed">
+                                        <div class="row">
+                                            <thead>
+                                                <tr>
+                                                    <td style="width:200px;">产品型号</td>
+                                                    <td style="width:200px;">工单数量</td>
+                                                    <td>工单量占比</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for product_name, order_quantity, order_proportion in item.order_top|my_split %}
+                                                <tr>
+                                                    <td>{{ product_name }}</td>
+                                                    <td style="width:150px; height:32px;">{{ order_quantity }}</td>
+                                                    <td>{{ order_proportion }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </div>
+                                    </table>
+                                    <div class="form-group">
+                                        <label for="time_and_solution" class="control-label">分析总结：</label>
+                                        <div >
+                                            <textarea rows="5" style="resize: none; background: transparent;" readonly="readonly" id="time_and_solution" class="form-control" name="time_and_solution" placeholder="132">{{ item.order_summary }}</textarea>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+
+                                <!-- 右边部分 -->
+                                <div class="col-md-5" style="margin-left: 100px;">
+                                    {% for item in TableItems|slice:"1:2" %}
+                                    <div class="pull-left" style="margin-bottom: 10px;">
+                                        <button class="btn btn-info" >wk{{ item.week_number }}</button>
+                                        <span>（年份：{{ item.week_year }}）</span>
+                                    </div>
+                                    <div class="pull-right" style="margin-bottom: 10px;">
+                                        <button class="btn btn-success" data-toggle="modal" href="/remote/{{ item.id }}"  data-target="#editRecord" onclick="Value_url('/')">编辑</button>
+                                        <button class="btn btn-warning" data-toggle="modal" data-target="#delRecord" onclick="Value_id('{{ item.id }}')">删除</button>
+                                    </div>
+                                    <table id="List3" class="table table-bordered table-hover table-condensed">
+                                        <div class="row">
+                                            <thead>
+                                                <tr>
+                                                    <td style="width:200px;">产品型号</td>
+                                                    <td style="width:200px;">工单数量</td>
+                                                    <td>工单量占比</td>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for product_name, order_quantity, order_proportion in item.order_top|my_split %}
+                                                <tr>
+                                                    <td>{{ product_name }}</td>
+                                                    <td style="width:150px; height:32px;">{{ order_quantity }}</td>
+                                                    <td>{{ order_proportion }}</td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </div>
+                                    </table>
+                                    <div class="form-group">
+                                        <label for="time_and_solution" class="control-label">分析总结：</label>
+                                        <div >
+                                            <textarea rows="5" style="resize: none; background: transparent;" readonly="readonly" id="time_and_solution" class="form-control" name="time_and_solution" placeholder="132">{{ item.order_summary }}</textarea>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--start-新增：模态弹出框-->
+                    <!--tabindex="-1"代表支持使用ESC退出（如下行最后箭头前加上‘  tabindex="-1" ’）-->
+                    <div class="modal fade" id="addRecord" tabindex="-1">
+                        <div class="modal-dialog" style="width:1080px">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>  <!-- 取消 -->
+                                    <h4 class="modal-title" id="H1">新建记录</h4>
+                                </div>
+                                <div class="modal-body">
+                                    <form id="new_record" action="" method="POST" class="form-horizontal" role="form">
+                                        <div class="row">
+                                            <div class="pull-left" style="width:515px; margin: 15px;">
+                                                <table id="table" class="table table-bordered table-hover">
+                                                    <div class="row">
+                                                        <thead>
+                                                            <tr>
+                                                                <td style="width:170px;"><b>产品型号</b></td>
+                                                                <td style="width:130px;"><b>工单数量</b></td>
+                                                                <td><b>工单量占比</b></td>
+                                                            </tr>
+                                                        </thead>
+                                                        <tbody>
+                                                            <tr>
+                                                                <td><input type="text" name="product_name_1" style="width:100%" /></td>
+                                                                <td><input type="text" name="order_quantity_1" style="width:100%" /></td>
+                                                                <td><input type="text" name="order_proportion_1" style="width:100%" /></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><input type="text" name="product_name_2" style="width:100%" /></td>
+                                                                <td><input type="text" name="order_quantity_2" style="width:100%" /></td>
+                                                                <td><input type="text" name="order_proportion_2" style="width:100%" /></td>
+                                                            </tr>
+                                                            <tr>
+                                                                <td><input type="text" name="product_name_3" style="width:100%" /></td>
+                                                                <td><input type="text" name="order_quantity_3" style="width:100%" /></td>
+                                                                <td><input type="text" name="order_proportion_3" style="width:100%" /></td>
+                                                            </tr>
+                                                        </tbody>
+                                                    </div>
+                                                </table>
+                                            </div>
+                                            <div class="pull-right" style="width:515px; margin-right: 15px; ">
+                                                <div class="form-group">
+                                                    <label for="week_number" class="col-sm-3 control-label">周编号：</label>
+                                                    <div class="col-sm-3">
+                                                        <input type="number" class="form-control" id="week_number" name="week_number" placeholder="请填数字" required="required"/>
+                                                    </div>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label for="week_year" class="col-sm-3 control-label">选择年份：</label>
+                                                    <div class="col-sm-4">
+                                                        <input type="text" class="form-control" id="week_year" name="week_year" value="" readonly="readonly" placeholder="请点击并选择日期..." />
+                                                    </div>
+                                                    <div style="padding-top:7px;"><i>(可不选，默认今年。)</i></div>
+                                                </div>
+                                                <div class="form-group"  >
+                                                    <label for="order_summary" class="col-sm-3 control-label" >分析总结：</label>
+                                                    <div style="padding:9px 15px 4px 15px;">
+                                                        <textarea rows="8" style="resize: vertical; background: transparent; " id="order_summary" class="form-control" name="order_summary" placeholder="请录入总结内容……"></textarea>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% csrf_token %}
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-success" data-dissmiss="modal" id="btnCreate" onclick="new_record()">提交</button>
+                                    <button type="button" class="btn btn-danger" id="btnCancel" data-dismiss="modal">取消</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--end-用户模态弹出框-->
+
+                    <!--编辑模态弹出框-->
+                    <div class="modal fade" id="editRecord" aria-hidden="true" data-backdrop="static" tabindex="-1">
+                            <div class="modal-dialog" style="width:1080px">
+                                <input type="hidden" id='url_temp' name='url_temp' value='' />
+                            <div class="modal-content">
+                                
+                            </div>
+                        </div>
+                    </div>
+
+                    <!--删除：模态弹出框-->
+                    <!--modal-dialog: style="width:800px"-->
+                    <div class="modal fade" id="delRecord" tabindex="-1">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+                                    <h4 id="myModalLabel">删除请确认</By></h4>
+                                </div>
+                                <div class="modal-body">
+                                    <form id='del_record' action="/del_record/" method="post" role="form">
+                                        <input type="hidden" id='id_del' name='id_del' value=''>
+                                        <h4 style="text-align:center;">
+                                            <i class="fa fa-warning modal-fa" style="color:red;"></i>
+                                            是否确认删除？<br />从服务器删除时无法恢复该条记录。
+                                        </h4>
+                                    {% csrf_token %}
+                                    </form>
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-warning" data-dissmiss="modal" id="btnCreate" onclick="del_record()">确认</button>
+                                    <button type="button" class="btn btn-danger" id="btnCancel" data-dismiss="modal">取消</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    </section>
+    <!--块级元素结束-->
+
+    <!-- JS部分 -->
+    <script type="text/javascript">
+
+        // 新增记录
+        function new_record() {
+            var form = document.getElementById('new_record');
+            var week_number_temp = document.getElementById("week_number").value
+            // 判断单元格是否为正整数（页面已经设定input-type为number）
+            function isPositiveNum(obj){//是否为正整数
+                var re = /^[0-9]+$/ ;
+                return re.test(obj)
+            };
+            // 判断周编号week_number输入框的值是否为正整数
+            if (isPositiveNum(week_number_temp) == false){
+                alert("提示：周编号不能为空，请输入正数字~");
+                return false;
+            } else {
+                form.submit();
+                $("#addRecord").on("hide.bs.modal",function(){
+                    $('#new_record')[0].reset(); //重置表单，否则新弹窗依然显示上次数据
+                    // clearForm('edit_form');//清空表单方法
+                })
+                $('#addRecord').modal('hide');
+                var messageOpts = {
+                        "closeButton" : true,//是否显示关闭按钮
+                        "debug" : false,//是否使用debug模式
+                        "positionClass" : "toast-top-center",//弹出窗的位置
+                        "timeOut" : "1500",//展现时间
+                    };
+                    toastr.options = messageOpts;
+                    // toastr.info('content','title');
+                    toastr.info('提交成功，请刷新页面');
+            };
+        };
+
+        // 删除记录 del_record()
+        // $('#delRecord').modal('hide');
+        function Value_id(ID){
+            $("#id_del").val(ID);
+            };
+        function del_record() {
+            var form = document.getElementById('del_record');
+            form.submit();
+            $('#delRecord').modal('hide');
+        };
+
+        // 单击修改时，清空数据
+        $("#editRecord").on("hidden.bs.modal", function() {  
+            $(this).removeData("bs.modal");
+            $(this).find(".modal-content").children().remove();
+        }); 
+        // 提交修改数据
+        // 单击地址页的“修改”时把指定值传递到模态框页面但不在form里面，所以改在单击更新按钮(edit_record())时并在form.submit()之前修改值
+        function Value_url(ID){
+            $("#url_temp").val(ID);
+            };
+        function edit_record() {
+            var url_temp=document.getElementById("url_temp").value;
+            document.getElementById("url_address").value = url_temp
+            var form = document.getElementById('edit_record');
+            form.submit();
+            $('#editRecord').modal('hide');
+        };
+
+        //日期选择
+        $(function () {
+                $('#week_year').datepicker({
+                // format: "yyyy-mm-dd",
+                format: "yyyy",
+                weekStart: 1,
+                autoclose:true,  //点选之后自动隐藏
+                minDate: "2010-04-06", //设置最早日期
+                language: "zh-CN",
+                orientation:'bottom',
+                //只选择年
+                startView: 'years',
+                maxViewMode:'years',
+                minViewMode:'years',
+                });
+            });
+
+        //工单表格编辑时可粘贴
+        //Paste Excel data into html table ** html表格实现Excel表格多单元格粘贴 **
+        $.fn.pasteFromExcel = function() {     //make it a jquery function
+            $(this).bind('paste', function(e) {
+                e.preventDefault(); //消除默认粘贴
+
+                //获取粘贴板数据
+                var clipboardData = window.clipboardData || e.originalEvent.clipboardData, // IE || chrome
+                        data = clipboardData.getData('Text'),
+                        //判断表格数据是使用\n还是\r分行，解析成行数组
+                    rowArr = (data.indexOf(String.fromCharCode(10)) > -1) ?
+                            data.split(String.fromCharCode(10)) :
+                            data.split(String.fromCharCode(13)),
+                        //根据\t解析单元格
+                        cellArr = rowArr.filter(function(item) { //兼容Excel行末\n，防止粘贴出多余空行
+                        return (item !== "")
+                    }).map(function(item) {
+                        return item. split(String.fromCharCode(9));
+                    });
+
+                //输出至网页表格
+                var tab = $(e.target).parents('table')[0],  //表格
+                        td = $(e.target).parents('td'),    //当前单元格
+                        startRow = td.parents('tr')[0].rowIndex, //当前单元格行数
+                        startCell = td[0].cellIndex, //当前单元格列数
+                        rows = tab.rows.length;  //总行数
+                for (var i = 0; i < cellArr.length && startRow + i < rows; i++) {
+                    var cells = tab.rows[startRow + i].cells.length;  //该行总列数
+
+                    for(var j = 0; j < cellArr[i].length && startCell + j < cells; j++) {
+                        var cell = tab.rows[startRow + i].cells[startCell + j];
+                        $(cell).find(':text').val(cellArr[i][j]);
+                    }
+                }
+            })
+        }
+        $('#table').pasteFromExcel();
+
+    </script>
+</body>
+
+</html>
+
